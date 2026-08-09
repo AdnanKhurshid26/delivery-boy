@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using PlaySuperUnity;
 
 public class GamePlayManager : MonoBehaviour
 {
@@ -215,6 +216,24 @@ public class GamePlayManager : MonoBehaviour
         itemDeliveredCanvas.SetActive(false);
 
         gameCompletedSceen.SetActive(true);
+
+        AwardPlaySuperCoins(stars);
+    }
+
+    // Reward the player with PlaySuper coins for clearing a level: 10 per star.
+    // Fire-and-forget by design — DistributeCoins self-stores on error and syncs
+    // later, so it must never block or gate the game-completed flow above.
+    private void AwardPlaySuperCoins(int stars){
+        if (stars <= 0){
+            return;
+        }
+
+        PlaySuperUnitySDK sdk = PlaySuperUnitySDK.Instance;
+        if (sdk == null){
+            return;
+        }
+
+        _ = sdk.DistributeCoins(PlaySuperBootstrap.CoinId, stars * 10);
     }
 
     public int calculateScore(){
