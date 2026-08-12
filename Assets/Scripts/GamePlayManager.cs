@@ -6,6 +6,9 @@ using TMPro;
 
 public class GamePlayManager : MonoBehaviour
 {
+    // PlaySuper: coins granted for each order the player delivers.
+    private const int CoinsPerDelivery = 10;
+
     private GameObject[] buildings;
     [SerializeField]
     private Player player;
@@ -165,6 +168,17 @@ public class GamePlayManager : MonoBehaviour
             changeTarget(shop);
 
             numDeliveredOrders += 1;
+
+            // PlaySuper: grant coins for the delivery.
+            // Double-pay guard: the enclosing `if (carryingOrder)` plus the
+            // synchronous `carryingOrder = false` above make this one-shot per
+            // order, so a double-tap of the deliver button cannot pay twice.
+            // Note the OTHER path in this class that fires twice: gameCompleted()
+            // is reachable both from here on the final delivery AND from
+            // endGame() when the timer expires -- no payout lives there, and any
+            // future level-completion bonus will need its own flag.
+            PlaySuperBootstrap.AwardCoins(CoinsPerDelivery);
+
             tmp3 = deliveredOredersDisplay.GetComponent<TextMeshProUGUI>();
             tmp3.text = numDeliveredOrders.ToString();
             if (useTime && (numDeliveredOrders == numTotalOrders)){
