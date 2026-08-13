@@ -10,6 +10,9 @@ public class GamePlayManager : MonoBehaviour
     [SerializeField]
     private Player player;
 
+    // PlaySuper: coins awarded per successful delivery.
+    private const int CoinsPerDelivery = 10;
+
 
     // For target pointer
     [SerializeField]
@@ -165,6 +168,12 @@ public class GamePlayManager : MonoBehaviour
             changeTarget(shop);
 
             numDeliveredOrders += 1;
+
+            // PlaySuper: mirror the delivery reward. Guarded by the carryingOrder
+            // check above, which is cleared before this line runs - so the second
+            // entry path (a double-tap on the deliver button) cannot pay out twice.
+            PlaySuperBootstrap.GrantCoins(CoinsPerDelivery);
+
             tmp3 = deliveredOredersDisplay.GetComponent<TextMeshProUGUI>();
             tmp3.text = numDeliveredOrders.ToString();
             if (useTime && (numDeliveredOrders == numTotalOrders)){
