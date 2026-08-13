@@ -165,6 +165,15 @@ public class GamePlayManager : MonoBehaviour
             changeTarget(shop);
 
             numDeliveredOrders += 1;
+
+            // PlaySuper: 1 coin per delivered order, mirroring numDeliveredOrders 1:1.
+            // Guarded by the enclosing carryingOrder check, which is cleared above — a
+            // repeated deliver-button event cannot pay out twice for the same order.
+            // Deliberately NOT placed in gameCompleted(), which is reachable from two
+            // paths (this method on the final timed delivery, and endGame() when the
+            // countdown expires) and would double-mint.
+            PlaySuperBootstrap.Grant(PlaySuperBootstrap.DeliveryCoinId, 1);
+
             tmp3 = deliveredOredersDisplay.GetComponent<TextMeshProUGUI>();
             tmp3.text = numDeliveredOrders.ToString();
             if (useTime && (numDeliveredOrders == numTotalOrders)){
