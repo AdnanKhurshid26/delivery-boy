@@ -165,6 +165,13 @@ public class GamePlayManager : MonoBehaviour
             changeTarget(shop);
 
             numDeliveredOrders += 1;
+
+            // PlaySuper: 10 coins per successful delivery. Safe from double-minting
+            // because the whole block is gated on carryingOrder, which is cleared
+            // above before this line runs — the deliver button has no debounce, so a
+            // fast double-tap re-enters this method and falls straight through.
+            PlaySuperRewards.GrantDeliveryReward();
+
             tmp3 = deliveredOredersDisplay.GetComponent<TextMeshProUGUI>();
             tmp3.text = numDeliveredOrders.ToString();
             if (useTime && (numDeliveredOrders == numTotalOrders)){
