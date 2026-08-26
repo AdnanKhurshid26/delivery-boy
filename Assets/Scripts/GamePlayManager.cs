@@ -42,6 +42,13 @@ public class GamePlayManager : MonoBehaviour
      scoreDisplay, taskOrdersDisplay, taskTimeDisplay, deliveredOredersDisplay;
     private TextMeshProUGUI tmp, tmp1, tmp2, tmp3;
 
+    // PlaySuper: gameCompleted() is reachable TWICE in one level. Delivering the
+    // last order calls it from deliverButtonClick(), but nothing stops the
+    // CountdownTimer there -- it keeps ticking, hits zero, and calls endGame(),
+    // which lands back in gameCompleted(). Without this flag that is two payouts
+    // for one level. Instance state, so it resets with the scene.
+    private bool rewardGranted = false;
+
     // Start is called before the first frame update
     void Start()
     {   
@@ -209,6 +216,15 @@ public class GamePlayManager : MonoBehaviour
 
     public void gameCompleted(){
         int stars = calculateScore();
+
+        // PlaySuper: flat coin grant for finishing the level. This path is
+        // win-only -- endGame() routes zero-star runs to gameOver() instead --
+        // so nothing is granted on a loss. Stars stay progression: they are not
+        // converted into coins and calculateScore() is untouched.
+        if (!rewardGranted){
+            rewardGranted = true;
+            PlaySuperRewards.GrantLevelComplete();
+        }
 
         tmp = scoreDisplay.GetComponent<TextMeshProUGUI>();
         tmp.text = "YOU EARNED " + stars.ToString();

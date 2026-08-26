@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.playsuper.unity": "4.4.0",
     "com.unity.adaptiveperformance": "6.0.0",
     "com.unity.adaptiveperformance.samsung.android": "5.1.0",
     "com.unity.ai.assistant": "2.8.0-pre.1",
@@ -56,6 +57,13 @@
       "url": "https://registry.spoiledcat.com",
       "scopes": [
         "com.spoiledcat"
+      ]
+    },
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.playsuper"
       ]
     }
   ]
