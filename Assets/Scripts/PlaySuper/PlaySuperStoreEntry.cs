@@ -6,19 +6,24 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// The game's one way into the PlaySuper store: a button built at runtime on the menu
-/// scene. Nothing here touches menu.unity -- the canvas, the button and (if needed) the
-/// EventSystem are all created in code.
+/// Owns the game's store presence on the menu screen.
 ///
-/// This is a plain placeholder. The positioned, art-directed entry point arrives later as
-/// a touchpoint and replaces it.
+/// The real entry point is the "reward-1" touchpoint -- the OFFER button positioned by its
+/// accepted placement. This class mounts that renderer when the menu loads and tears it
+/// down when the player leaves.
+///
+/// The plain REWARDS button is now only a FALLBACK, built if the touchpoint cannot be
+/// shown. Without it, a failed fetch would leave the game with no way into the store.
+///
+/// Nothing here edits menu.unity -- every object is created in code.
 /// </summary>
 public class PlaySuperStoreEntry : MonoBehaviour
 {
     // First entry in EditorBuildSettings, i.e. the boot scene.
     private const string MenuSceneName = "menu";
 
-    private GameObject canvasObject;
+    private GameObject touchpointHost;
+    private GameObject fallbackCanvas;
     private float timeScaleBeforeStore = 1f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -64,37 +69,77 @@ public class PlaySuperStoreEntry : MonoBehaviour
     {
         bool onMenu = scene.name == MenuSceneName;
 
-        if (onMenu && canvasObject == null)
+        if (onMenu)
         {
-            BuildButton();
+            if (touchpointHost == null)
+            {
+                MountTouchpoint();
+            }
+
+            return;
         }
-        else if (!onMenu && canvasObject != null)
+
+        if (touchpointHost != null)
         {
-            Destroy(canvasObject);
-            canvasObject = null;
+            Destroy(touchpointHost);
+            touchpointHost = null;
+        }
+
+        if (fallbackCanvas != null)
+        {
+            Destroy(fallbackCanvas);
+            fallbackCanvas = null;
         }
     }
 
-    private void BuildButton()
+    private void MountTouchpoint()
     {
+        // A runtime canvas is inert without one -- clicks silently do nothing. Do this
+        // before the touchpoint builds its own canvas.
         EnsureEventSystem();
 
-        canvasObject = new GameObject("PlaySuperStoreCanvas");
-        canvasObject.transform.SetParent(transform, false);
+        touchpointHost = new GameObject("PlaySuperTouchpoint_reward-1");
+        touchpointHost.transform.SetParent(transform, false);
 
-        var canvas = canvasObject.AddComponent<Canvas>();
+        var renderer = touchpointHost.AddComponent<PlaySuperTouchpointReward1>();
+        renderer.OnUnavailable = BuildFallbackButton;
+    }
+
+    private bool IsOnMenu()
+    {
+        return SceneManager.GetActiveScene().name == MenuSceneName;
+    }
+
+    /// <summary>
+    /// Plain store button, built only when the touchpoint could not be shown.
+    /// </summary>
+    private void BuildFallbackButton()
+    {
+        // The fetch may have resolved after the player already started a level -- do not
+        // paint a menu button onto the gameplay scene.
+        if (fallbackCanvas != null || !IsOnMenu())
+        {
+            return;
+        }
+
+        EnsureEventSystem();
+
+        fallbackCanvas = new GameObject("PlaySuperStoreCanvas");
+        fallbackCanvas.transform.SetParent(transform, false);
+
+        var canvas = fallbackCanvas.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 500;
 
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
+        var scaler = fallbackCanvas.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1080f, 1920f);
         scaler.matchWidthOrHeight = 0.5f;
 
-        canvasObject.AddComponent<GraphicRaycaster>();
+        fallbackCanvas.AddComponent<GraphicRaycaster>();
 
         var buttonObject = new GameObject("StoreButton", typeof(RectTransform));
-        buttonObject.transform.SetParent(canvasObject.transform, false);
+        buttonObject.transform.SetParent(fallbackCanvas.transform, false);
 
         var rect = buttonObject.GetComponent<RectTransform>();
         rect.anchorMin = new Vector2(1f, 1f);
@@ -129,7 +174,6 @@ public class PlaySuperStoreEntry : MonoBehaviour
 
     private static void EnsureEventSystem()
     {
-        // A runtime canvas is inert without one -- clicks silently do nothing.
         if (FindObjectOfType<EventSystem>() != null)
         {
             return;
