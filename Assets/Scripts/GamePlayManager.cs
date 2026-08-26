@@ -42,6 +42,12 @@ public class GamePlayManager : MonoBehaviour
      scoreDisplay, taskOrdersDisplay, taskTimeDisplay, deliveredOredersDisplay;
     private TextMeshProUGUI tmp, tmp1, tmp2, tmp3;
 
+    // PlaySuper: one-shot guard on the coin grant. gameCompleted() has TWO entry
+    // paths - deliverButtonClick() when the final order of a timed level lands, and
+    // endGame() when the countdown expires - so an unguarded grant would double-mint
+    // a level's coins. This manager is per-level, so the flag resets on level load.
+    private bool playSuperRewardGranted = false;
+
     // Start is called before the first frame update
     void Start()
     {   
@@ -209,6 +215,14 @@ public class GamePlayManager : MonoBehaviour
 
     public void gameCompleted(){
         int stars = calculateScore();
+
+        // PlaySuper: grant the level-completion reward exactly once per level. Stars
+        // are progression and are NOT converted into coins - the payout is a flat
+        // amount defined in PlaySuperRewards.
+        if (!playSuperRewardGranted){
+            playSuperRewardGranted = true;
+            PlaySuperRewards.GrantLevelComplete();
+        }
 
         tmp = scoreDisplay.GetComponent<TextMeshProUGUI>();
         tmp.text = "YOU EARNED " + stars.ToString();
