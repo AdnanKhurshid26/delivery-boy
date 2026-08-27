@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using PlaySuperUnity;
 
 public class GamePlayManager : MonoBehaviour
 {
@@ -41,6 +42,9 @@ public class GamePlayManager : MonoBehaviour
     public GameObject deathScreen, gameCompletedSceen, itemDeliveredCanvas,
      scoreDisplay, taskOrdersDisplay, taskTimeDisplay, deliveredOredersDisplay;
     private TextMeshProUGUI tmp, tmp1, tmp2, tmp3;
+
+    // PlaySuper: one-shot guard for the level-complete coin payout.
+    private bool playSuperRewardGranted = false;
 
     // Start is called before the first frame update
     void Start()
@@ -210,11 +214,47 @@ public class GamePlayManager : MonoBehaviour
     public void gameCompleted(){
         int stars = calculateScore();
 
+        GrantPlaySuperReward();
+
         tmp = scoreDisplay.GetComponent<TextMeshProUGUI>();
         tmp.text = "YOU EARNED " + stars.ToString();
         itemDeliveredCanvas.SetActive(false);
 
         gameCompletedSceen.SetActive(true);
+    }
+
+    /// <summary>
+    /// Grants PlaySuper coins for clearing the level.
+    ///
+    /// GUARDED because gameCompleted() has TWO live entry paths and both can fire
+    /// in the same session:
+    ///   1. deliverButtonClick() - the final order of a timed level is delivered.
+    ///   2. endGame() - CountdownTimer expires. The timer keeps running after the
+    ///      level has already been won, so it reaches gameCompleted() a second
+    ///      time via the non-zero score branch.
+    /// Coins are real currency, so the flag makes the payout one-shot per level.
+    ///
+    /// The amount is not derived from game state: Delivery Boy awards stars, which
+    /// are progression and never converted to currency. 100 is the studio's chosen
+    /// flat level-complete grant (see PlaySuperConfig).
+    ///
+    /// Fire-and-forget by design - DistributeCoins stores failures locally and
+    /// retries, so this must never block the completion screen.
+    /// </summary>
+    private async void GrantPlaySuperReward(){
+        if (playSuperRewardGranted){
+            return;
+        }
+        playSuperRewardGranted = true;
+
+        if (PlaySuperUnitySDK.Instance == null){
+            Debug.LogWarning("[PlaySuper] SDK not ready; level-complete reward skipped.");
+            return;
+        }
+
+        await PlaySuperUnitySDK.Instance.DistributeCoins(
+            PlaySuperConfig.RewardCoinId,
+            PlaySuperConfig.LevelCompleteReward);
     }
 
     public int calculateScore(){
