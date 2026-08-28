@@ -233,6 +233,12 @@ public class GamePlayManager : MonoBehaviour
         tmp.text = "YOU EARNED " + stars.ToString();
         itemDeliveredCanvas.SetActive(false);
 
+        // PlaySuper: mount the "home-2" touchpoint on this panel before it is shown. The panel
+        // is not a scene of its own, so the renderer rides along with it and is hidden and
+        // destroyed with it. MountOn() ignores a repeat call, which the second caller above
+        // makes possible.
+        PlaySuperTouchpoint_Home2.MountOn(gameCompletedSceen);
+
         gameCompletedSceen.SetActive(true);
     }
 
