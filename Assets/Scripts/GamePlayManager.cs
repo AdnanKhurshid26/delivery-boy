@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using DeliveryBoy.PlaySuperIntegration;
 
 public class GamePlayManager : MonoBehaviour
 {
@@ -41,6 +42,10 @@ public class GamePlayManager : MonoBehaviour
     public GameObject deathScreen, gameCompletedSceen, itemDeliveredCanvas,
      scoreDisplay, taskOrdersDisplay, taskTimeDisplay, deliveredOredersDisplay;
     private TextMeshProUGUI tmp, tmp1, tmp2, tmp3;
+
+    // PlaySuper: one-shot guard for the level-completion coin grant, reset per level
+    // because this component is recreated on every scene load.
+    private bool playSuperRewardGranted = false;
 
     // Start is called before the first frame update
     void Start()
@@ -209,6 +214,20 @@ public class GamePlayManager : MonoBehaviour
 
     public void gameCompleted(){
         int stars = calculateScore();
+
+        // PlaySuper: flat 100-coin grant on level completion.
+        //
+        // Guarded because this method has TWO entry paths on a timed level:
+        // deliverButtonClick() calls it directly the moment the last order lands, and the
+        // countdown timer keeps running and can fire endGame() -> gameCompleted()
+        // immediately afterwards. Without the flag the player would be paid twice.
+        //
+        // Stars are progression and are deliberately NOT converted into coins — the
+        // payout is flat and independent of the score shown below.
+        if (!playSuperRewardGranted){
+            playSuperRewardGranted = true;
+            PlaySuperRewards.GrantLevelComplete();
+        }
 
         tmp = scoreDisplay.GetComponent<TextMeshProUGUI>();
         tmp.text = "YOU EARNED " + stars.ToString();
