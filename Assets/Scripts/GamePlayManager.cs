@@ -234,6 +234,12 @@ public class GamePlayManager : MonoBehaviour
         itemDeliveredCanvas.SetActive(false);
 
         gameCompletedSceen.SetActive(true);
+
+        // PlaySuper: the "home" touchpoint lives on this results panel. Mounting it here
+        // rather than on scene load means it appears exactly when the panel does, and
+        // never on the death screen (which goes through gameOver()). MountOn is a no-op
+        // if the second entry path above reaches this line again.
+        PlaySuperTouchpoint_Home.MountOn(this);
     }
 
     public int calculateScore(){
