@@ -232,6 +232,12 @@ public class GamePlayManager : MonoBehaviour
         itemDeliveredCanvas.SetActive(false);
 
         gameCompletedSceen.SetActive(true);
+
+        // PlaySuper: the "home" touchpoint sits on this completion panel, so it is
+        // mounted when the panel is shown rather than at level start - nothing is
+        // fetched for a level the player never finishes. Mount() is idempotent, which
+        // matters because of the double entry path noted above.
+        DeliveryBoy.PlaySuperIntegration.PlaySuperTouchpointLevelComplete.Mount();
     }
 
     public int calculateScore(){
