@@ -230,6 +230,12 @@ public class GamePlayManager : MonoBehaviour
         itemDeliveredCanvas.SetActive(false);
 
         gameCompletedSceen.SetActive(true);
+
+        // PlaySuper: mount the "home" touchpoint on the TASK COMPLETED panel - that panel is
+        // the screen its accepted placement was approved against. Called after SetActive so
+        // the renderer's OnEnable runs with the panel already visible, and it is a no-op if
+        // this method is reached a second time.
+        PlaySuperTouchpoint_Home.MountOn(gameCompletedSceen);
     }
 
     public int calculateScore(){
