@@ -42,6 +42,9 @@ public class GamePlayManager : MonoBehaviour
      scoreDisplay, taskOrdersDisplay, taskTimeDisplay, deliveredOredersDisplay;
     private TextMeshProUGUI tmp, tmp1, tmp2, tmp3;
 
+    // One-shot guard for the PlaySuper coin payout (see gameCompleted).
+    private bool playSuperCoinsGranted = false;
+
     // Start is called before the first frame update
     void Start()
     {   
@@ -215,6 +218,21 @@ public class GamePlayManager : MonoBehaviour
         itemDeliveredCanvas.SetActive(false);
 
         gameCompletedSceen.SetActive(true);
+
+        // PlaySuper: flat 100 coins per completed level. Stars are progression, not
+        // currency, so the payout is deliberately independent of the star count.
+        //
+        // The guard matters because this method is reached TWICE on a timed level:
+        // deliverButtonClick() calls it as soon as the last order is delivered, and the
+        // countdown keeps running and calls endGame() -> gameCompleted() again when the
+        // clock hits zero. Coins are real currency, so double-minting is a live bug.
+        if (!playSuperCoinsGranted){
+            playSuperCoinsGranted = true;
+            PlaySuperBootstrap.GrantLevelCompleteCoins();
+        }
+
+        // PlaySuper: the approved "home-2" reward widget lives on this panel.
+        PlaySuperTouchpoint_Home2.MountOn(gameCompletedSceen);
     }
 
     public int calculateScore(){
