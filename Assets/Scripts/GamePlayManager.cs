@@ -42,6 +42,12 @@ public class GamePlayManager : MonoBehaviour
      scoreDisplay, taskOrdersDisplay, taskTimeDisplay, deliveredOredersDisplay;
     private TextMeshProUGUI tmp, tmp1, tmp2, tmp3;
 
+    // PlaySuper: coins are granted once per completed level. gameCompleted() is reachable by
+    // TWO paths - endGame() when the countdown expires, and deliverButtonClick() directly when
+    // the last order lands while the timer is still running - so the payout needs this guard or
+    // a level could mint twice.
+    private bool playSuperCoinsGranted = false;
+
     // Start is called before the first frame update
     void Start()
     {   
@@ -215,6 +221,17 @@ public class GamePlayManager : MonoBehaviour
         itemDeliveredCanvas.SetActive(false);
 
         gameCompletedSceen.SetActive(true);
+
+        // PlaySuper: 100 coins for finishing the level, once. Stars are progression and are
+        // deliberately NOT converted into coins - see PlaySuperRewards.
+        if (!playSuperCoinsGranted){
+            playSuperCoinsGranted = true;
+            PlaySuperRewards.GrantLevelComplete();
+        }
+
+        // PlaySuper: the `home` reward widget lives on this screen. Mounted after SetActive so
+        // it builds straight away; Attach() is a no-op if it is already there.
+        PlaySuperTouchpoint_Home.MountOn(gameCompletedSceen);
     }
 
     public int calculateScore(){
