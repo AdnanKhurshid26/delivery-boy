@@ -42,6 +42,10 @@ public class GamePlayManager : MonoBehaviour
      scoreDisplay, taskOrdersDisplay, taskTimeDisplay, deliveredOredersDisplay;
     private TextMeshProUGUI tmp, tmp1, tmp2, tmp3;
 
+    // PlaySuper: coins are real currency, so the level-complete payout fires at most
+    // once per level. Reset per level because each level is a fresh scene load.
+    private bool playSuperRewardGranted = false;
+
     // Start is called before the first frame update
     void Start()
     {   
@@ -114,6 +118,14 @@ public class GamePlayManager : MonoBehaviour
 
         recieveButton.gameObject.SetActive(false);
         deliverButton.gameObject.SetActive(false);
+
+        // PlaySuper: mount the "home-2" touchpoint on the screen the studio approved it
+        // on. gameCompletedSceen is the TaskCompletedScreen panel and starts inactive,
+        // so its own SetActive in gameCompleted() drives the widget's OnEnable/OnDisable.
+        if (gameCompletedSceen != null &&
+            gameCompletedSceen.GetComponent<PlaySuperTouchpoint_Home2>() == null){
+            gameCompletedSceen.AddComponent<PlaySuperTouchpoint_Home2>();
+        }
 
         buildings = GameObject.FindGameObjectsWithTag("Buildings");
         shopIndex = Random.Range(0, buildings.Length);
@@ -209,6 +221,22 @@ public class GamePlayManager : MonoBehaviour
 
     public void gameCompleted(){
         int stars = calculateScore();
+
+        // PlaySuper: grant 100 coins for completing the level.
+        //
+        // This game has no in-game currency of its own to mirror -- stars are
+        // progression, not a spendable balance, so they are NOT converted into coins --
+        // and the studio chose 100 coins per level completed.
+        //
+        // GUARDED because gameCompleted() has TWO entry paths that can both fire on one
+        // level: deliverButtonClick() calls it the moment the last order lands on a
+        // timed level, and the CountdownTimer keeps running and reaches
+        // endGame() -> gameCompleted() when time is up. Without the flag a fast finish
+        // mints 200 coins.
+        if (!playSuperRewardGranted){
+            playSuperRewardGranted = true;
+            PlaySuperBootstrap.GrantCoins(100);
+        }
 
         tmp = scoreDisplay.GetComponent<TextMeshProUGUI>();
         tmp.text = "YOU EARNED " + stars.ToString();
